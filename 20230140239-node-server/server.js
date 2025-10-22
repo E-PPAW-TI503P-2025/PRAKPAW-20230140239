@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
+const { testConnection } = require("./config/database");
+const db = require("./models");
 const app = express();
 const PORT = 3001;
 
@@ -72,7 +74,24 @@ app.use((err, req, res, next) => {
 });
 
 // Start the server (hanya sekali)
-app.listen(PORT, () => {
-    console.log(`Express server running at http://localhost:${PORT}/`);
-    console.log(`Library Management API is ready!`);
-});
+const startServer = async () => {
+    try {
+        // Test koneksi database
+        await testConnection();
+        
+        // Sync database (create tables if not exist)
+        await db.sequelize.sync({ alter: true });
+        console.log('✓ Database synchronized successfully!');
+        
+        // Start server
+        app.listen(PORT, () => {
+            console.log(`Express server running at http://localhost:${PORT}/`);
+            console.log(`Library Management API is ready!`);
+        });
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
+    }
+};
+
+startServer();
