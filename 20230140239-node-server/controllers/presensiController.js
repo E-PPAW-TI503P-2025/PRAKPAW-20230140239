@@ -101,7 +101,7 @@ exports.CheckOut = async (req, res) => {
 exports.deletePresensi = async (req, res) => {
   try {
     const { id: userId } = req.user;
-    const { presensiId } = req.params.id;
+    const presensiId = req.params.id; // Fixed: was incorrectly destructuring
     const recordToDelete = await Presensi.findByPk(presensiId);
     if (!recordToDelete) {
       return res.status(404).json({ message: "Data presensi tidak ditemukan." });
@@ -109,8 +109,47 @@ exports.deletePresensi = async (req, res) => {
     if (recordToDelete.userId !== userId) {
       return res.status(403).json({ message: "Anda tidak berhak menghapus data ini." });
     }
-     await recordToDelete.destroy();
+    await recordToDelete.destroy();
     res.status(204).send();
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Terjadi kesalahan pada server", error: error.message });
+  }
+};
+
+exports.updatePresensi = async (req, res) => {
+  try {
+    const { id: userId } = req.user;
+    const presensiId = req.params.id;
+    const { checkIn, checkOut } = req.body;
+    
+    const recordToUpdate = await Presensi.findByPk(presensiId);
+    if (!recordToUpdate) {
+      return res.status(404).json({ message: "Data presensi tidak ditemukan." });
+    }
+    if (recordToUpdate.userId !== userId) {
+      return res.status(403).json({ message: "Anda tidak berhak mengubah data ini." });
+    }
+    
+    // Update fields if provided
+    if (checkIn) recordToUpdate.checkIn = new Date(checkIn);
+    if (checkOut) recordToUpdate.checkOut = new Date(checkOut);
+    
+    await recordToUpdate.save();
+    
+    const formattedData = {
+      id: recordToUpdate.id,
+      userId: recordToUpdate.userId,
+      nama: recordToUpdate.nama,
+      checkIn: format(recordToUpdate.checkIn, "yyyy-MM-dd HH:mm:ssXXX", { timeZone }),
+      checkOut: recordToUpdate.checkOut ? format(recordToUpdate.checkOut, "yyyy-MM-dd HH:mm:ssXXX", { timeZone }) : null,
+    };
+    
+    res.json({
+      message: "Data presensi berhasil diperbarui",
+      data: formattedData,
+    });
   } catch (error) {
     res
       .status(500)
