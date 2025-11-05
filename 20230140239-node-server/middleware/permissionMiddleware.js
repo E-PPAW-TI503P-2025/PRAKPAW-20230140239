@@ -1,7 +1,7 @@
 exports.addUserData = (req, res, next) => {
     // normalize property names expected by controllers (they expect `id` and `nama`)
     console.log('User data added');
-    req.user = { id: 123, nama: 'user karyawan', role: 'admin' };
+    req.user = { id: 123, nama: 'faqih', role: 'admin' };
     next();
 };
 

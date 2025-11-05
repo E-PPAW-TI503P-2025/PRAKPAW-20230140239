@@ -3,6 +3,33 @@ const { Presensi } = require("../models");
 const { format } = require("date-fns-tz");
 const timeZone = "Asia/Jakarta";
 
+exports.getAllPresensi = async (req, res) => {
+  try {
+    const allRecords = await Presensi.findAll({
+      order: [['checkIn', 'DESC']]
+    });
+    
+    const formattedRecords = allRecords.map(record => ({
+      id: record.id,
+      userId: record.userId,
+      nama: record.nama,
+      checkIn: format(record.checkIn, "yyyy-MM-dd HH:mm:ssXXX", { timeZone }),
+      checkOut: record.checkOut ? format(record.checkOut, "yyyy-MM-dd HH:mm:ssXXX", { timeZone }) : null,
+    }));
+    
+    res.json({
+      data: formattedRecords,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("Error mengambil data presensi:", error);
+    res.status(500).json({
+      message: "Terjadi kesalahan saat mengambil data presensi.",
+      error: error.message,
+    });
+  }
+};
+
 exports.CheckIn = async (req, res) => {
   // 2. Gunakan try...catch untuk error handling
   try {
@@ -95,6 +122,36 @@ exports.CheckOut = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Terjadi kesalahan pada server", error: error.message });
+  }
+};
+
+exports.getPresensiById = async (req, res) => {
+  try {
+    const presensiId = req.params.id;
+    const record = await Presensi.findByPk(presensiId);
+    
+    if (!record) {
+      return res.status(404).json({ message: "Data presensi tidak ditemukan." });
+    }
+    
+    const formattedData = {
+      id: record.id,
+      userId: record.userId,
+      nama: record.nama,
+      checkIn: format(record.checkIn, "yyyy-MM-dd HH:mm:ssXXX", { timeZone }),
+      checkOut: record.checkOut ? format(record.checkOut, "yyyy-MM-dd HH:mm:ssXXX", { timeZone }) : null,
+    };
+    
+    res.json({
+      data: formattedData,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("Error mengambil data presensi:", error);
+    res.status(500).json({
+      message: "Terjadi kesalahan saat mengambil data presensi.",
+      error: error.message,
+    });
   }
 };
 
