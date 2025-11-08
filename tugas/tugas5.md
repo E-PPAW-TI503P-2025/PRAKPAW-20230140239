@@ -1,19 +1,19 @@
 # delete
 
-![del](image.png)
+![del](tugas6/image.png)
 
-![del-2](image-1.png)
+![del-2](tugas6/image-1.png)
 
 ---
 
 # put
 
-![put](image-2.png)
+![put](tugas6/image-2.png)
 
 ---
 
 # search
 
-![search](image-3.png)
+![search](tugas6/image-3.png)
 
-![search-date](image-4.png)
+![search-date](tugas6/image-4.png)
