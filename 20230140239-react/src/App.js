@@ -8,10 +8,22 @@ function App() {
   return (
     <Router>
       <div>
-        {/* Navigasi ini bisa dihapus jika tidak diperlukan */}
-        <nav className="p-4 bg-gray-100">
-          <Link to="/login" className="mr-4">Login</Link>
-          <Link to="/register">Register</Link>
+        {/* Navigasi dengan tema rose pink */}
+        <nav className="p-4 bg-gradient-to-r from-rose-100 to-pink-100 shadow-md">
+          <div className="container mx-auto flex gap-4">
+            <Link 
+              to="/login" 
+              className="px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-lg hover:from-rose-600 hover:to-pink-600 transform hover:scale-105 transition-all duration-200"
+            >
+              Login
+            </Link>
+            <Link 
+              to="/register"
+              className="px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-lg hover:from-pink-600 hover:to-rose-600 transform hover:scale-105 transition-all duration-200"
+            >
+              Register
+            </Link>
+          </div>
         </nav>
         
         <Routes>
