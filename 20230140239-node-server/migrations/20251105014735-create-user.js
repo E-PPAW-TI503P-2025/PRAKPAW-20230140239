@@ -9,6 +9,16 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
+      userid: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'Users',
+          key: 'id'
+        },
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE'
+      },
       nama: {
         type: Sequelize.STRING,
         allowNull: false
@@ -16,14 +26,14 @@ module.exports = {
       email: {
         type: Sequelize.STRING,
         allowNull: false,
-        unique: true 
+        unique: true
       },
       password: {
         type: Sequelize.STRING,
         allowNull: false
       },
       role: {
-        type: Sequelize.ENUM('mahasiswa', 'admin'), 
+        type: Sequelize.ENUM('mahasiswa', 'admin'),
         allowNull: false,
         defaultValue: 'mahasiswa'
       },
