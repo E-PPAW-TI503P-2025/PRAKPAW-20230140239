@@ -34,6 +34,7 @@ exports.CheckIn = async (req, res) => {
   try {
     const { id: userId, nama: userName } = req.user;
     const waktuSekarang = new Date();
+    const { latitude, longitude } = req.body;
 
     const existingRecord = await Presensi.findOne({
       where: { userId: userId, checkOut: null },
@@ -50,6 +51,8 @@ exports.CheckIn = async (req, res) => {
       nama: userName,
       checkIn: waktuSekarang,
       checkOut: null,
+      latitude,
+      longitude
     });
 
     const formattedData = {
