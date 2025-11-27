@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import Navbar from './Navbar';
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -9,8 +10,14 @@ function DashboardPage() {
     navigate('/login'); // Arahkan kembali ke halaman login
   };
 
+  const handlePresensi = () => {
+    navigate('/presensi'); // Arahkan ke halaman presensi
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-rose-100 flex flex-col items-center justify-center p-8 relative overflow-hidden">
+    <>
+      <Navbar />     
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-rose-100 flex flex-col items-center justify-center p-8 relative overflow-hidden">
       
       {/* Kotak-kotak dekoratif background - Layer 1 */}
       <div className="absolute top-10 left-10 w-32 h-32 bg-rose-200 opacity-20 rounded-3xl rotate-12 animate-pulse"></div>
@@ -53,7 +60,7 @@ function DashboardPage() {
         </h1>
        
         <p className="text-lg text-gray-600 mb-8">
-          Selamat Datang di Halaman Dashboard Anda 💖
+          Selamat Datang di Halaman Dashboard Anda 
         </p>
 
         {/* Grid Cards Statistik */}
@@ -71,23 +78,6 @@ function DashboardPage() {
             <div className="text-sm text-gray-600">Kehadiran</div>
           </div>
         </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-4 justify-center mb-6">
-          <button className="py-3 px-6 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold rounded-lg shadow-lg hover:from-rose-600 hover:to-pink-600 transform hover:scale-105 transition-all duration-200">
-            Check-In
-          </button>
-          <button className="py-3 px-6 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold rounded-lg shadow-lg hover:from-pink-600 hover:to-rose-600 transform hover:scale-105 transition-all duration-200">
-            Check-Out
-          </button>
-        </div>
-     
-        <button
-          onClick={handleLogout}
-          className="py-2 px-6 bg-gradient-to-r from-rose-400 to-pink-400 text-white font-semibold rounded-lg shadow-md hover:from-rose-500 hover:to-pink-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transform hover:scale-105 transition-all duration-200"
-        >
-          Logout
-        </button>
       </div>
 
       {/* Kotak-kotak dekoratif tambahan */}
@@ -95,6 +85,7 @@ function DashboardPage() {
       <div className="absolute bottom-10 right-10 w-36 h-36 bg-rose-200 opacity-25 rounded-3xl -rotate-6 animate-pulse" style={{ animationDuration: '4s' }}></div>
 
     </div>
+    </>
   );
 }
 

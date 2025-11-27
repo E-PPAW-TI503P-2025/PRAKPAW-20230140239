@@ -5,10 +5,8 @@ const { addUserData } = require('../middleware/permissionMiddleware');
 
 router.use(addUserData);
 
-// Get all presensi records from database
 router.get('/', presensiController.getAllPresensi);
 
-// Get specific presensi by ID
 router.get('/:id', presensiController.getPresensiById);
 
 router.post('/check-in', presensiController.CheckIn);

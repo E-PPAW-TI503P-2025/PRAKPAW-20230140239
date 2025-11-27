@@ -15,9 +15,8 @@ const authRoutes = require("./routes/auth");
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(morgan("dev")); // Logger yang lebih detail
+app.use(morgan("dev")); 
 
-// Custom logger middleware
 app.use((req, res, next) => {
     const timestamp = new Date().toISOString();
     console.log(`[${timestamp}] ${req.method} ${req.url} - IP: ${req.ip}`);
@@ -51,7 +50,6 @@ app.use("/api/presensi", presensiRoutes);
 app.use("/api/reports", reportRoutes);
 app.use('/api/auth', authRoutes);
 
-// 404 Not Found Handler (harus setelah semua rute)
 app.use((req, res) => {
     res.status(404).json({
         error: 'Not Found',
@@ -60,7 +58,6 @@ app.use((req, res) => {
     });
 });
 
-// Generic Error Handler (harus di paling akhir)
 app.use((err, req, res, next) => {
     console.error(`[${new Date().toISOString()}] Error:`, err.stack);
     
@@ -75,17 +72,13 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Start the server (hanya sekali)
 const startServer = async () => {
     try {
-        // Test koneksi database
         await testConnection();
         
-        // Sync database (create tables if not exist)
         await db.sequelize.sync({ alter: true });
         console.log('✓ Database synchronized successfully!');
         
-        // Start server
         app.listen(PORT, () => {
             console.log(`Express server running at http://localhost:${PORT}/`);
             console.log(`Library Management API is ready!`);
