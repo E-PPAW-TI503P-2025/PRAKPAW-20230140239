@@ -52,7 +52,8 @@ exports.CheckIn = async (req, res) => {
       checkIn: waktuSekarang,
       checkOut: null,
       latitude,
-      longitude
+      longitude,
+      buktiFoto: req.file ? req.file.path : null
     });
 
     const formattedData = {
@@ -186,7 +187,6 @@ exports.updatePresensi = async (req, res) => {
       return res.status(403).json({ message: "Anda tidak berhak mengubah data ini." });
     }
 
-    // Update fields if provided
     if (checkIn) recordToUpdate.checkIn = new Date(checkIn);
     if (checkOut) recordToUpdate.checkOut = new Date(checkOut);
 
@@ -210,3 +210,25 @@ exports.updatePresensi = async (req, res) => {
       .json({ message: "Terjadi kesalahan pada server", error: error.message });
   }
 };
+
+const multer = require('multer');
+const path = require('path');
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${req.user.id}-${Date.now()}${path.extname(file.originalname)}`);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Hanya file gambar yang diperbolehkan!'), false);
+  }
+};
+
+exports.upload = multer({ storage: storage, fileFilter: fileFilter });

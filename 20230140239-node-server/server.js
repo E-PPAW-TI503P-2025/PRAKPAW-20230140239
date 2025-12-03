@@ -5,6 +5,7 @@ const { testConnection } = require("./config/database");
 const db = require("./models");
 const app = express();
 const PORT = 3001;
+const path = require('path');
 
 // Routers
 const booksRouter = require('./routes/books');
@@ -15,7 +16,8 @@ const authRoutes = require("./routes/auth");
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(morgan("dev")); 
+app.use(morgan("dev"));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use((req, res, next) => {
     const timestamp = new Date().toISOString();
@@ -60,10 +62,10 @@ app.use((req, res) => {
 
 app.use((err, req, res, next) => {
     console.error(`[${new Date().toISOString()}] Error:`, err.stack);
-    
+
     const statusCode = err.statusCode || 500;
     const message = err.message || 'Internal Server Error';
-    
+
     res.status(statusCode).json({
         error: statusCode === 500 ? 'Internal Server Error' : message,
         message: statusCode === 500 ? 'Something went wrong on the server' : message,
@@ -75,10 +77,10 @@ app.use((err, req, res, next) => {
 const startServer = async () => {
     try {
         await testConnection();
-        
+
         await db.sequelize.sync({ alter: true });
         console.log('✓ Database synchronized successfully!');
-        
+
         app.listen(PORT, () => {
             console.log(`Express server running at http://localhost:${PORT}/`);
             console.log(`Library Management API is ready!`);

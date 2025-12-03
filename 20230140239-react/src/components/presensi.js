@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import Navbar from './Navbar';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import Webcam from 'react-webcam';
 
 // Fix for default marker icon in React Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -19,6 +20,13 @@ function AttendancePage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [coords, setCoords] = useState(null);
+  const [image, setImage] = useState(null);
+  const webcamRef = useRef(null);
+
+  const capture = useCallback(() => {
+    const imageSrc = webcamRef.current.getScreenshot();
+    setImage(imageSrc);
+  }, [webcamRef]);
   const navigate = useNavigate();
 
   const getLocation = () => {
@@ -47,8 +55,8 @@ function AttendancePage() {
     setError('');
     setMessage('');
 
-    if (!coords) {
-      setError("Lokasi belum didapatkan. Mohon izinkan akses lokasi.");
+    if (!coords || !image) {
+      setError("Lokasi dan Foto wajib ada!");
       return;
     }
 
@@ -56,14 +64,24 @@ function AttendancePage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('http://localhost:3001/api/presensi/check-in', {
-        latitude: coords.lat,
-        longitude: coords.lng
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+
+      const blob = await (await fetch(image)).blob();
+
+      const formData = new FormData();
+      formData.append('latitude', coords.lat);
+      formData.append('longitude', coords.lng);
+      formData.append('image', blob, 'selfie.jpg');
+
+      const response = await axios.post(
+        'http://localhost:3001/api/presensi/check-in',
+        formData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
         }
-      });
+      );
 
       setMessage(response.data.message);
     } catch (err) {
@@ -105,52 +123,204 @@ function AttendancePage() {
 
   return (
     <>
-      {/* Navbar */}
       <Navbar />
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-rose-100 flex flex-col items-center p-8 relative overflow-hidden">
 
-      <div className="container mx-auto px-4 py-8">
-        {coords && (
-          <div className="mb-8 border rounded-lg overflow-hidden shadow-lg">
-            <MapContainer center={[coords.lat, coords.lng]} zoom={15} style={{ height: '300px', width: '100%' }}>
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-              />
-              <Marker position={[coords.lat, coords.lng]}>
-                <Popup>Lokasi Presensi Anda</Popup>
-              </Marker>
-            </MapContainer>
-          </div>
-        )}
+        {/* Decorative Background Elements */}
+        <div className="absolute top-10 left-10 w-32 h-32 bg-rose-200 opacity-20 rounded-3xl rotate-12 animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-24 h-24 bg-pink-300 opacity-30 rounded-2xl -rotate-12"></div>
+        <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-rose-300 opacity-20 rounded-full animate-bounce" style={{ animationDuration: '3s' }}></div>
+        <div className="absolute bottom-40 right-1/3 w-28 h-28 bg-pink-200 opacity-25 rounded-3xl rotate-45"></div>
+        <div className="absolute top-1/3 left-1/2 w-20 h-20 bg-rose-400 opacity-15 rounded-xl -rotate-6"></div>
 
-        <div className="min-h-[50vh] flex items-center justify-center">
-          <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
-            <h2 className="text-3xl font-bold mb-6 text-gray-800">
+        <div className="w-full max-w-6xl space-y-8 relative z-10">
+
+          {/* Header */}
+          <div className="text-center">
+            <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-pink-600 drop-shadow-sm mb-2">
               Lakukan Presensi
             </h2>
+            <p className="text-gray-500">Silakan lengkapi data lokasi dan foto untuk melakukan presensi</p>
+          </div>
 
-            {message && <p className="text-green-600 mb-4 font-medium">{message}</p>}
-            {error && <p className="text-red-600 mb-4 font-medium">{error}</p>}
+          {/* Alerts */}
+          {(message || error) && (
+            <div className="max-w-2xl mx-auto transition-all duration-300 ease-in-out">
+              {message && (
+                <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md flex items-center" role="alert">
+                  <span className="text-2xl mr-2">✅</span>
+                  <span className="font-medium">{message}</span>
+                </div>
+              )}
+              {error && (
+                <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-md flex items-center" role="alert">
+                  <span className="text-2xl mr-2">⚠️</span>
+                  <span className="font-medium">{error}</span>
+                </div>
+              )}
+            </div>
+          )}
 
-            <div className="flex space-x-4">
-              <button
-                onClick={handleCheckIn}
-                disabled={loading}
-                className={`w-full py-3 px-4 text-white font-semibold rounded-md shadow-sm transition-colors ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
-                  }`}
-              >
-                {loading ? 'Loading...' : 'Check-In'}
-              </button>
-              <button
-                onClick={handleCheckOut}
-                disabled={loading}
-                className={`w-full py-3 px-4 text-white font-semibold rounded-md shadow-sm transition-colors ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'
-                  }`}
-              >
-                {loading ? 'Loading...' : 'Check-Out'}
-              </button>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Map Card */}
+            <div className="bg-white p-6 rounded-2xl shadow-xl border-t-4 border-rose-400 h-fit">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                  <svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Lokasi Anda
+                </h3>
+                {coords && (
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                    Terdeteksi
+                  </span>
+                )}
+              </div>
+
+              <div className="h-[500px] w-full rounded-xl overflow-hidden shadow-inner border border-gray-100 relative group">
+                {coords ? (
+                  <MapContainer center={[coords.lat, coords.lng]} zoom={15} style={{ height: '100%', width: '100%' }}>
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                    />
+                    <Marker position={[coords.lat, coords.lng]}>
+                      <Popup>Lokasi Presensi Anda</Popup>
+                    </Marker>
+                  </MapContainer>
+                ) : (
+                  <div className="h-full w-full bg-gray-50 flex flex-col items-center justify-center text-gray-400 animate-pulse">
+                    <svg className="w-12 h-12 mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Mencari lokasi...</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Attendance Card (Camera + Actions) */}
+            <div className="bg-white p-6 rounded-2xl shadow-xl border-t-4 border-pink-400 h-fit">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                  <svg className="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Foto Selfie
+                </h3>
+                {image ? (
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                    Siap Upload
+                  </span>
+                ) : (
+                  <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full font-medium">
+                    Belum Ada Foto
+                  </span>
+                )}
+              </div>
+
+              <div className="h-64 w-full rounded-xl overflow-hidden shadow-inner border border-gray-100 bg-black relative flex items-center justify-center group mb-4">
+                {image ? (
+                  <img src={image} alt="Selfie" className="h-full w-full object-cover" />
+                ) : (
+                  <Webcam
+                    audio={false}
+                    ref={webcamRef}
+                    screenshotFormat="image/jpeg"
+                    videoConstraints={{ facingMode: "user", aspectRatio: 1 }}
+                    className="h-full w-full object-cover"
+                  />
+                )}
+              </div>
+
+              <div className="mb-8">
+                {!image ? (
+                  <button
+                    onClick={capture}
+                    className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl shadow-md hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-lg transform active:scale-95"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Ambil Foto
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setImage(null)}
+                    className="w-full py-3 px-4 bg-gray-500 text-white font-bold rounded-xl shadow-md hover:bg-gray-600 transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-lg transform active:scale-95"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Foto Ulang
+                  </button>
+                )}
+              </div>
+
+              <div className="border-t border-gray-100 pt-6">
+                <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4 text-center">Konfirmasi Kehadiran</h4>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={handleCheckIn}
+                    disabled={loading}
+                    className={`w-full py-4 px-8 text-white font-bold rounded-xl shadow-lg transform transition-all duration-200 hover:-translate-y-1 flex items-center justify-center gap-3 ${loading
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:shadow-green-200 hover:shadow-xl'
+                      }`}
+                  >
+                    {loading ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                        </svg>
+                        CHECK-IN MASUK
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={handleCheckOut}
+                    disabled={loading}
+                    className={`w-full py-4 px-8 text-white font-bold rounded-xl shadow-lg transform transition-all duration-200 hover:-translate-y-1 flex items-center justify-center gap-3 ${loading
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-rose-500 to-red-600 hover:shadow-rose-200 hover:shadow-xl'
+                      }`}
+                  >
+                    {loading ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        CHECK-OUT PULANG
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
+
         </div>
       </div>
     </>
